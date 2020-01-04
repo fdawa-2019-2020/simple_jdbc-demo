@@ -1,9 +1,11 @@
 package demo.jdbc;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Random;
@@ -34,6 +36,8 @@ public class Main {
 			injectionWithPreparedPreparedStatement(conn, "Doe");
 
 			injectionWithPreparedPreparedStatement(conn, "'Doe' OR 1=1");
+			
+			getMetadata(conn);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -46,6 +50,25 @@ public class Main {
 	}
 	
 	
+	private static void getMetadata(Connection conn) throws SQLException {
+		DatabaseMetaData metaData = conn.getMetaData();
+		ResultSet catalogRs = metaData.getCatalogs();
+		System.out.println(catalogRs.getFetchSize());
+		while(catalogRs.next()) {
+			String catalogName = catalogRs.getString(1);
+			ResultSet tableRs = metaData.getTables(catalogName, null, "PEOPLE", null);
+			ResultSetMetaData tableRsMetaData = tableRs.getMetaData();
+			while( tableRs.next() ) {
+				int size = tableRsMetaData.getColumnCount();
+				for (int i = 1; i < size+1; i++) {
+					System.out.print(tableRsMetaData.getColumnName(i)+" "+tableRs.getObject(i)+" | ");
+				}
+			}
+		}
+		
+	}
+
+
 	private static void insertOneRecordInPeopleTable(Connection conn) throws SQLException {
 		conn.createStatement().executeUpdate(
 				"INSERT INTO People "
