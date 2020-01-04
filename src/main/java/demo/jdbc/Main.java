@@ -17,17 +17,23 @@ public class Main {
 		try {
 			conn = DriverManager.getConnection("jdbc:hsqldb:mem:testdb", "SA", "");
 			
-			createTablePeople(conn);
+			createPeopleTable(conn);
 
-			insertOneRecord(conn);
+			insertOneRecordInPeopleTable(conn);
 			
-			selectAllFromPeople(conn);
+			selectAllFromPeopleTable(conn);
 			
-			createPeopleRecords(conn);
+			createSeveralPeopleRecords(conn);
 
-			selectAllFromPeople(conn);
+			selectAllFromPeopleTable(conn);
+
+			injectionWithSimpleStatement(conn, "'Doe'");
 			
-			injection(conn, "1 OR 1=1");
+			injectionWithSimpleStatement(conn, "'Doe' OR 1=1");
+
+			injectionWithPreparedPreparedStatement(conn, "Doe");
+
+			injectionWithPreparedPreparedStatement(conn, "'Doe' OR 1=1");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -40,7 +46,7 @@ public class Main {
 	}
 	
 	
-	private static void insertOneRecord(Connection conn) throws SQLException {
+	private static void insertOneRecordInPeopleTable(Connection conn) throws SQLException {
 		conn.createStatement().executeUpdate(
 				"INSERT INTO People "
 				+ "(firstname, lastname, age, pswd) "
@@ -49,17 +55,27 @@ public class Main {
 	}
 
 
-	private static void injection(Connection conn, String parameter) throws SQLException {
-		System.out.println("Injection");
+	private static void injectionWithSimpleStatement(Connection conn, String parameter) throws SQLException {
+		System.out.println("\nTentative d'injection SELECT * FROM People WHERE lastname="+parameter+";");
 		Statement stmt = conn.createStatement();
 
-		ResultSet rs = stmt.executeQuery("SELECT * FROM People WHERE ID="+parameter+";");		
-		iterateThrough(rs);
-		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM People WHERE lastname="+parameter+";");		
+		iterateThrough(rs);		
 	}
 
+	private static void injectionWithPreparedPreparedStatement(Connection conn, String parameter) throws SQLException {
+		System.out.println("\nTentative d'injection SELECT * FROM People WHERE lastname="+parameter+";");
+		PreparedStatement pStmt = conn.prepareStatement("SELECT * FROM People WHERE lastname= ?");
+		pStmt.setString(1, parameter);
 
-	private static void selectAllFromPeople(Connection conn) throws SQLException {
+		ResultSet rs = pStmt.executeQuery();
+
+		iterateThrough(rs);		
+	}
+	
+
+	private static void selectAllFromPeopleTable(Connection conn) throws SQLException {
+		System.out.println("--- Select all with \"SELECT * FROM People;\"");
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT * FROM People;");
 		iterateThrough(rs);
@@ -79,7 +95,7 @@ public class Main {
 		}
 	}
 
-	public static void createPeopleRecords(Connection conn) throws SQLException {
+	private static void createSeveralPeopleRecords(Connection conn) throws SQLException {
 
 		PreparedStatement pStmt = conn.prepareStatement(
 				"INSERT INTO People "
@@ -109,15 +125,18 @@ public class Main {
 	
 
 
-	public static void createTablePeople(Connection conn) throws SQLException {
+	private static void createPeopleTable(Connection conn) throws SQLException {
 		Statement stmt = conn.createStatement();
 		
-		stmt.execute("CREATE TABLE People (\n" + 
+		String createTableSQL = "CREATE TABLE People (\n" + 
 				"id INTEGER IDENTITY PRIMARY KEY,\n" + 
 				"firstname VARCHAR(120) NOT NULL,\n" + 
 				"lastname VARCHAR(120) NOT NULL,\n" + 
 				"age INTEGER \n,"
-				+ "pswd VARCHAR(12) NOT NULL)" );
+				+ "pswd VARCHAR(12) NOT NULL)";
+		stmt.execute(createTableSQL);
+		
+		System.out.println("--- Table Creation with ---\n"+createTableSQL);
 		stmt.close();
 
 	}
@@ -130,20 +149,7 @@ public class Main {
 			{ "Jocelyn", "Rich" },
 			{ "Cameron", "Rosario" },
 			{ "Jaime", "Morales" },
-			{ "Evie", "Dudley" },
-			{ "Anabella", "Buckley" },
-			{ "Courtney", "Curtis" },
-			{ "Alexander", "Williamson" },
-			{ "Sarahi", "Weaver" },
-			{ "Karma", "Sherman" },
-			{ "Janae", "Gill" },
-			{ "Clinton", "Burgess" },
-			{ "Stacy", "Farley" },
-			{ "Malik", "Howell" },
-			{ "Nehemiah", "Combs" },
-			{ "Marshall", "Pineda" },
-			{ "Ruby", "Heath" },
-			{ "Addisyn", "Hoffman" },
+			{ "Evie", "Dudley" }
 		};
 	}
 
