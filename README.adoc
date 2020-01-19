@@ -1,0 +1,5 @@
+= Démonstration JDBC
+
+* Clonez le projet
+* Lancer la classe `demo.jdbc.Main`
+
